@@ -12,12 +12,14 @@
 <div id="gate" class="orientation-overlay" aria-hidden="true">
   <div class="orientation-card">
     <div class="orientation-hero"></div>
-    <h3>Rotate your phone</h3>
-    <p>To reveal Seraphine’s game, please use landscape mode.</p>
+    <h3>Rotate Your Phone</h3>
+    <p>Please rotate your phone to see the cards.</p>
   </div>
 </div>
 
 <main class="wrap" id="game">
+
+  <div class="spotlight"></div>
   <div class="header">
     <small>Seraphine Noir Presents</small>
     <h2>Which casino has Seraphine chosen for you?</h2>
@@ -28,6 +30,7 @@
     <article class="sr-card" data-name="Slots Gallery" data-tag="The Obsidian Vault"
              data-bonus="€6,500 + 225 Free Spins" data-link="https://slotsaff.com/a262679d3">
       <div class="card-inner">
+        <span class="glow-ring"></span>
         <div class="card-face front">
           <div class="badge">🎰</div>
           <h4>Slots Gallery</h4>
@@ -47,6 +50,7 @@
     <article class="sr-card" data-name="Loki Casino" data-tag="The Crimson Chamber"
              data-bonus="€6,000 + 230 Free Spins" data-link="https://lokicasinolink.com/h5f039675">
       <div class="card-inner">
+        <span class="glow-ring"></span>
         <div class="card-face front">
           <div class="badge">♠</div>
           <h4>Loki Casino</h4>
@@ -66,6 +70,7 @@
     <article class="sr-card" data-name="Hero Spin" data-tag="The Golden Sanctuary"
              data-bonus="€3,000 + 350 Free Spins" data-link="https://hrspan.alkelton.com/?mid=303121_1758906">
       <div class="card-inner">
+        <span class="glow-ring"></span>
         <div class="card-face front">
           <div class="badge">♦</div>
           <h4>Hero Spin</h4>
@@ -81,6 +86,12 @@
       </div>
     </article>
   </section>
+
+  <div class="controls">
+    <button id="spin">SPIN</button>
+    <div id="status">Tap to begin</div>
+  </div>
+
 </main>
 
 <!-- POPUP -->
@@ -100,7 +111,6 @@
 
 <!-- CONFETTI LAYER -->
 <div id="confetti" class="confetti" aria-hidden="true"></div>
-
 <script src="script.js"></script>
 </body>
 </html>
