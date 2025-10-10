@@ -114,7 +114,6 @@
   modal.addEventListener('click', (e)=>{ if(e.target===modal) modal.style.display='none'; });
 
   spinBtn.addEventListener('click', ()=> {
-        alert('hello');
         if (spinBtn.disabled) return;
         spinBtn.disabled = true;
         statusEl.textContent = 'Spinning...';
