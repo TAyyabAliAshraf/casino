@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Seraphine Noir — Cards Mini Game</title>
+<style>
+  :root{
+    --bg:#0B0B0B; --card:#121212; --muted:#CFCFCF; --text:#FFFFFF; --gold:#B08D57;
+  }
+  html,body{height:100%}
+  body{
+    margin:0; background:radial-gradient(1200px 600px at 50% 10%, rgba(176,141,87,.08), transparent 60%) var(--bg);
+    color:var(--text); font-family: Georgia, 'Times New Roman', serif; overflow-x:hidden;
+  }
+  /* Rotate overlay (portrait) */
+  .orientation-overlay{
+    position:fixed; inset:0; display:none; z-index:9999;
+    background:rgba(0,0,0,.86);
+    align-items:center; justify-content:center; text-align:center;
+    padding:24px;
+  }
+  .orientation-card{
+    max-width:min(680px,92vw);
+    background:linear-gradient(180deg,#121212 0%, #0E0E0E 100%);
+    border:1px solid rgba(176,141,87,.35); color:#fff; border-radius:16px;
+    padding:22px; box-shadow:0 30px 80px rgba(0,0,0,.6);
+  }
+  .orientation-card h3{ margin:0 0 8px; color:var(--gold); font-size:clamp(20px,3.5vw,28px) }
+  .orientation-card p{ margin:0 0 12px; color:var(--muted); font: 400 14px/1.6 Arial, Helvetica, sans-serif }
+  .orientation-hero{
+    width:min(360px,70vw); aspect-ratio:3/4; margin:6px auto 14px;
+    background:url('https://static.wixstatic.com/media/322757_82fa2d37a5644f938a0fd10f079008fe~mv2.png') center/cover no-repeat;
+    filter: drop-shadow(0 0 20px rgba(176,141,87,.35));
+  }
+
+  /* Main section */
+  .wrap{ max-width:960px; margin:0 auto; padding:24px; }
+  .header{
+    text-align:center; margin-bottom:10px;
+  }
+  .header small{ color:var(--muted); letter-spacing:.5px; font: 400 12px/1 Arial, Helvetica, sans-serif }
+  .header h2{ margin:6px 0 0; color:var(--gold); font-size:clamp(22px,3.7vw,34px); line-height:1.2 }
+
+  /* Cards strip */
+  .sr-strip{
+    display:flex; gap:14px; justify-content:center; align-items:stretch;
+    margin:18px 0 10px;
+  }
+  .sr-card{
+    flex:1 1 280px; min-width:280px; max-width:300px;
+    perspective:1000px;
+  }
+  .card-inner{
+    position:relative; width:100%; height:220px; transform-style:preserve-3d; transition:transform .6s cubic-bezier(.2,.7,.2,1);
+    border-radius:14px; box-shadow:0 14px 40px rgba(0,0,0,.45); cursor:pointer;
+  }
+  .card-inner:hover{ transform:translateY(-2px) }
+  .sr-card.flipped .card-inner{ transform:rotateY(180deg) }
+  .card-face{
+    position:absolute; inset:0; backface-visibility:hidden;
+    background:linear-gradient(180deg,#1a1a1a 0%, #0f0f0f 100%);
+    border:1px solid rgba(176,141,87,.35); border-radius:14px; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+  }
+  .card-face h4{ margin:0; font-size:20px }
+  .card-face small{ color:var(--muted); font: 400 12px/1.4 Arial, Helvetica, sans-serif }
+  .badge{ font-size:18px }
+  .bonus{ color:#fff; font:700 14px/1 Arial, Helvetica, sans-serif }
+  .seal{ font:700 10px/1 Arial, Helvetica, sans-serif; color:#bfbfbf }
+  .back{
+    transform:rotateY(180deg);
+    background:radial-gradient(circle at 50% -20%, rgba(176,141,87,.18), transparent 40%), linear-gradient(180deg,#0f0f0f,#161616);
+  }
+  .cta{
+    margin-top:10px; border:none; color:#000; background:linear-gradient(180deg,#F5D48D,#B08D57);
+    padding:12px 18px; border-radius:999px; font:700 14px/1 Arial, Helvetica, sans-serif; letter-spacing:.5px;
+    box-shadow:0 10px 24px rgba(176,141,87,.3); cursor:pointer;
+  }
+
+  /* Popup modal */
+  .modal{ position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.66); z-index:9998; }
+  .modal-card{
+    width:min(92vw,520px);
+    background:#0E0E0E; border:1px solid rgba(176,141,87,.35); border-radius:16px; padding:22px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6);
+    text-align:center; position:relative;
+  }
+  .glow{
+    position:absolute; inset:-18px; border-radius:18px; pointer-events:none;
+    box-shadow:0 0 40px rgba(176,141,87,.35), 0 0 80px rgba(176,141,87,.25) inset;
+  }
+  .modal h3{ margin:0 0 6px; color:#fff; font-size:22px }
+  .modal p{ margin:0 0 14px; color:#E7E7E7; font: 400 14px/1.6 Arial, Helvetica, sans-serif }
+  .modal .cta{ margin:10px 6px 0 }
+  .ghost{ background:transparent; color:var(--gold); border:1px solid rgba(176,141,87,.45) }
+
+  /* Confetti particles */
+  .confetti{ position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:10000 }
+  .confetti i{
+    position:absolute; width:8px; height:8px; background:linear-gradient(180deg,#FFD86E,#B08D57);
+    border-radius:2px; filter:drop-shadow(0 0 6px rgba(255,215,130,.7));
+    animation:fall .9s ease-out forwards;
+  }
+  @keyframes fall{
+    to { transform:translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity:0 }
+  }
+
+  /* Mobile fallback stacking (but overlay will cover portrait) */
+  @media (max-width:768px){
+    .sr-strip{ gap:10px }
+    .sr-card{ min-width:90vw; max-width:90vw }
+    .card-inner{ height:200px }
+  }
+</style>
+</head>
+<body>
+
+<!-- PORTRAIT GATE -->
+<div id="gate" class="orientation-overlay" aria-hidden="true">
+  <div class="orientation-card">
+    <div class="orientation-hero"></div>
+    <h3>Rotate your phone</h3>
+    <p>To reveal Seraphine’s game, please use landscape mode.</p>
+  </div>
+</div>
+
+<main class="wrap" id="game">
+  <div class="header">
+    <small>Seraphine Noir Presents</small>
+    <h2>Which casino has Seraphine chosen for you?</h2>
+  </div>
+
+  <section class="sr-strip" id="cards">
+    <!-- Card 1 -->
+    <article class="sr-card" data-name="Slots Gallery" data-tag="The Obsidian Vault"
+             data-bonus="€6,500 + 225 Free Spins" data-link="https://slotsaff.com/a262679d3">
+      <div class="card-inner">
+        <div class="card-face front">
+          <div class="badge">🎰</div>
+          <h4>Slots Gallery</h4>
+          <small>The Obsidian Vault</small>
+          <div class="bonus">€6,500 + 225 Free Spins</div>
+          <div class="seal">Seraphine Tested</div>
+        </div>
+        <div class="card-face back">
+          <h4>Slots Gallery</h4>
+          <small>Tap to claim your bonus</small>
+          <button class="cta">Play Now</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Card 2 -->
+    <article class="sr-card" data-name="Loki Casino" data-tag="The Crimson Chamber"
+             data-bonus="€6,000 + 230 Free Spins" data-link="https://lokicasinolink.com/h5f039675">
+      <div class="card-inner">
+        <div class="card-face front">
+          <div class="badge">♠</div>
+          <h4>Loki Casino</h4>
+          <small>The Crimson Chamber</small>
+          <div class="bonus">€6,000 + 230 Free Spins</div>
+          <div class="seal">Seraphine Tested</div>
+        </div>
+        <div class="card-face back">
+          <h4>Loki Casino</h4>
+          <small>Tap to claim your bonus</small>
+          <button class="cta">Play Now</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Card 3 -->
+    <article class="sr-card" data-name="Hero Spin" data-tag="The Golden Sanctuary"
+             data-bonus="€3,000 + 350 Free Spins" data-link="https://hrspan.alkelton.com/?mid=303121_1758906">
+      <div class="card-inner">
+        <div class="card-face front">
+          <div class="badge">♦</div>
+          <h4>Hero Spin</h4>
+          <small>The Golden Sanctuary</small>
+          <div class="bonus">€3,000 + 350 Free Spins</div>
+          <div class="seal">Seraphine Tested</div>
+        </div>
+        <div class="card-face back">
+          <h4>Hero Spin</h4>
+          <small>Tap to claim your bonus</small>
+          <button class="cta">Play Now</button>
+        </div>
+      </div>
+    </article>
+  </section>
+</main>
+
+<!-- POPUP -->
+<div id="modal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="glow"></div>
+    <div style="color:var(--gold); letter-spacing:.6px; font:700 12px/1 Arial,Helvetica,sans-serif; margin-bottom:6px;">Fate has spoken</div>
+    <h3 id="mTitle"></h3>
+    <p id="mCopy"></p>
+    <div>
+      <button id="mCTA" class="cta">PLAY NOW</button>
+      <button id="mClose" class="cta ghost">Back</button>
+    </div>
+    <div style="text-align:center; margin-top:10px; font: 400 11px/1.4 Arial, Helvetica, sans-serif; color:#A5A5A5;">Seraphine plays with limits. So should you.</div>
+  </div>
+</div>
+
+<!-- CONFETTI LAYER -->
+<div id="confetti" class="confetti" aria-hidden="true"></div>
+
+<script>
+(() => {
+  const gate = document.getElementById('gate');
+  const modal = document.getElementById('modal');
+  const mTitle = document.getElementById('mTitle');
+  const mCopy  = document.getElementById('mCopy');
+  const mCTA   = document.getElementById('mCTA');
+  const mClose = document.getElementById('mClose');
+  const confetti = document.getElementById('confetti');
+
+  // Show overlay in portrait
+  const checkOrientation = () => {
+    const portrait = window.matchMedia('(orientation: portrait)').matches || window.innerHeight > window.innerWidth;
+    gate.style.display = portrait ? 'flex' : 'none';
+  };
+  ['load','resize','orientationchange'].forEach(ev => window.addEventListener(ev, checkOrientation));
+  checkOrientation();
+
+  // Flip animations and popup
+  const cards = Array.from(document.querySelectorAll('.sr-card'));
+  let pendingLink = '#';
+
+  cards.forEach(card => {
+    const inner = card.querySelector('.card-inner');
+    const cta = card.querySelector('.back .cta');
+    // flip on tap
+    inner.addEventListener('click', (e) => {
+      // ignore if clicking the CTA itself (handled below)
+      if(e.target.classList.contains('cta')) return;
+      cards.forEach(c => c.classList.remove('flipped'));
+      card.classList.add('flipped');
+    });
+
+    // CTA → popup
+    cta.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const name  = card.dataset.name;
+      const tag   = card.dataset.tag;
+      const bonus = card.dataset.bonus;
+      pendingLink = card.dataset.link || '#';
+      mTitle.textContent = name;
+      mCopy.innerHTML = `<span style="color:#B08D57">${tag}</span><br/>Personally chosen for you by Seraphine Noir.<br/><strong>${bonus}</strong>`;
+      modal.style.display = 'grid';
+    });
+  });
+
+  // Modal buttons
+  mClose.addEventListener('click', () => { modal.style.display = 'none'; });
+  modal.addEventListener('click', (e)=>{ if(e.target===modal) modal.style.display='none'; });
+
+  // Confetti burst then redirect
+  function burstConfetti(x=window.innerWidth/2, y=window.innerHeight/2){
+    const N = 80;
+    for(let i=0;i<N;i++){
+      const p = document.createElement('i');
+      const dx = (Math.random()*2-1)*320 + 'px';
+      const dy = (Math.random()*-1)*400 + 'px';
+      const rot = (Math.random()*720 - 360) + 'deg';
+      p.style.left = x + 'px';
+      p.style.top  = y + 'px';
+      p.style.setProperty('--dx', dx);
+      p.style.setProperty('--dy', dy);
+      p.style.setProperty('--rot', rot);
+      confetti.appendChild(p);
+      setTimeout(()=>p.remove(), 900);
+    }
+  }
+
+  mCTA.addEventListener('click', (e) => {
+    // glow is CSS, now confetti then redirect
+    const rect = e.target.getBoundingClientRect();
+    burstConfetti(rect.left + rect.width/2, rect.top + rect.height/2);
+    setTimeout(()=>{ window.location.href = pendingLink; }, 900);
+  });
+})();
+</script>
+</body>
+</html>
